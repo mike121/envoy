@@ -119,16 +119,20 @@ public:
   Event::MockTimer* timer_{};
 };
 
+void faultFilterBadConfigHelper(const std::string& json) {
+  Stats::IsolatedStoreImpl stats;
+  Json::ObjectSharedPtr config = Json::Factory::loadFromString(json);
+  NiceMock<Runtime::MockLoader> runtime;
+  EXPECT_THROW(FaultFilterConfig(*config, runtime, "", stats), EnvoyException);
+}
+
 TEST(FaultFilterBadConfigTest, EmptyConfig) {
   const std::string json = R"EOF(
   {
   }
   )EOF";
 
-  Stats::IsolatedStoreImpl stats;
-  Json::ObjectSharedPtr config = Json::Factory::loadFromString(json);
-  NiceMock<Runtime::MockLoader> runtime;
-  EXPECT_THROW(FaultFilterConfig(*config, runtime, "", stats), EnvoyException);
+  faultFilterBadConfigHelper(json);
 }
 
 TEST(FaultFilterBadConfigTest, BadAbortPercent) {
@@ -141,10 +145,35 @@ TEST(FaultFilterBadConfigTest, BadAbortPercent) {
     }
   )EOF";
 
-  Stats::IsolatedStoreImpl stats;
-  Json::ObjectSharedPtr config = Json::Factory::loadFromString(json);
-  NiceMock<Runtime::MockLoader> runtime;
-  EXPECT_THROW(FaultFilterConfig(*config, runtime, "", stats), EnvoyException);
+  faultFilterBadConfigHelper(json);
+}
+
+TEST(FaultFilterBadConfigTest, EmptyDownstreamNodes) {
+  const std::string json = R"EOF(
+    {
+      "abort" : {
+        "abort_percent" : 80,
+        "http_status" : 503
+      },
+      "downstream_nodes": []
+    }
+  )EOF";
+
+  faultFilterBadConfigHelper(json);
+}
+
+TEST(FaultFilterBadConfigTest, NotBooleanMatchDownstreamCluster) {
+  const std::string json = R"EOF(
+    {
+      "abort" : {
+        "abort_percent" : 80,
+        "http_status" : 503
+      },
+      "match_downstream_cluster": "string"
+    }
+  )EOF";
+
+  faultFilterBadConfigHelper(json);
 }
 
 TEST(FaultFilterBadConfigTest, MissingHTTPStatus) {
@@ -156,10 +185,7 @@ TEST(FaultFilterBadConfigTest, MissingHTTPStatus) {
     }
   )EOF";
 
-  Stats::IsolatedStoreImpl stats;
-  Json::ObjectSharedPtr config = Json::Factory::loadFromString(json);
-  NiceMock<Runtime::MockLoader> runtime;
-  EXPECT_THROW(FaultFilterConfig(*config, runtime, "", stats), EnvoyException);
+  faultFilterBadConfigHelper(json);
 }
 
 TEST(FaultFilterBadConfigTest, BadDelayType) {
@@ -173,10 +199,7 @@ TEST(FaultFilterBadConfigTest, BadDelayType) {
     }
   )EOF";
 
-  Stats::IsolatedStoreImpl stats;
-  Json::ObjectSharedPtr config = Json::Factory::loadFromString(json);
-  NiceMock<Runtime::MockLoader> runtime;
-  EXPECT_THROW(FaultFilterConfig(*config, runtime, "", stats), EnvoyException);
+  faultFilterBadConfigHelper(json);
 }
 
 TEST(FaultFilterBadConfigTest, BadDelayPercent) {
@@ -190,10 +213,7 @@ TEST(FaultFilterBadConfigTest, BadDelayPercent) {
     }
   )EOF";
 
-  Stats::IsolatedStoreImpl stats;
-  Json::ObjectSharedPtr config = Json::Factory::loadFromString(json);
-  NiceMock<Runtime::MockLoader> runtime;
-  EXPECT_THROW(FaultFilterConfig(*config, runtime, "", stats), EnvoyException);
+  faultFilterBadConfigHelper(json);
 }
 
 TEST(FaultFilterBadConfigTest, BadDelayDuration) {
@@ -207,10 +227,7 @@ TEST(FaultFilterBadConfigTest, BadDelayDuration) {
     }
    )EOF";
 
-  Stats::IsolatedStoreImpl stats;
-  Json::ObjectSharedPtr config = Json::Factory::loadFromString(json);
-  NiceMock<Runtime::MockLoader> runtime;
-  EXPECT_THROW(FaultFilterConfig(*config, runtime, "", stats), EnvoyException);
+  faultFilterBadConfigHelper(json);
 }
 
 TEST(FaultFilterBadConfigTest, MissingDelayDuration) {
@@ -223,10 +240,7 @@ TEST(FaultFilterBadConfigTest, MissingDelayDuration) {
     }
    )EOF";
 
-  Stats::IsolatedStoreImpl stats;
-  Json::ObjectSharedPtr config = Json::Factory::loadFromString(json);
-  NiceMock<Runtime::MockLoader> runtime;
-  EXPECT_THROW(FaultFilterConfig(*config, runtime, "", stats), EnvoyException);
+  faultFilterBadConfigHelper(json);
 }
 
 TEST_F(FaultFilterTest, AbortWithHttpStatus) {
